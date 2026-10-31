@@ -189,6 +189,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     <div class="toggle"><div class="field name"><b>Spoken coaching</b><small>"40 seconds burpees, let's go", rest calls, 3-2-1</small></div><button class="switch" id="sw-speech" role="switch" aria-checked="true" aria-label="Spoken coaching"></button></div>
     <div class="toggle"><div class="field name"><b>Voice control</b><small>Say done, next, pause, resume, stop, or "16 kilos"</small></div><button class="switch" id="sw-voice" role="switch" aria-checked="false" aria-label="Voice control"></button></div>
     <p class="note" id="voice-note" hidden></p>
+    <div class="toggle"><div class="field name"><b>Keep screen on</b><small>Whenever this app is open, not just during workouts</small></div><button class="switch" id="sw-keepon" role="switch" aria-checked="true" aria-label="Keep screen on"></button></div>
+    <div class="toggle"><div class="field name"><b>Beeps</b><small>Turn off if they pause your Spotify music</small></div><button class="switch" id="sw-beeps" role="switch" aria-checked="true" aria-label="Beeps"></button></div>
+    <p class="note" id="wake-note"></p>
   </section>
 </div>
 
@@ -521,13 +524,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   function setSwitch(el, on) { el.setAttribute("aria-checked", on ? "true" : "false"); }
   setSwitch($("sw-speech"), speechOn); setSwitch($("sw-voice"), voiceWanted);
   $("sw-speech").addEventListener("click", function () { speechOn = !speechOn; setSwitch($("sw-speech"), speechOn); store.set("wr.speech", speechOn); });
+  var keepOn = store.get("wr.keepOn", true), beepsOn = store.get("wr.beeps", true);
+  setSwitch($("sw-keepon"), keepOn); setSwitch($("sw-beeps"), beepsOn);
+  $("sw-keepon").addEventListener("click", function () { keepOn = !keepOn; setSwitch($("sw-keepon"), keepOn); store.set("wr.keepOn", keepOn); if (keepOn) requestWake(); else if (!running) releaseWake(); });
+  $("sw-beeps").addEventListener("click", function () { beepsOn = !beepsOn; setSwitch($("sw-beeps"), beepsOn); store.set("wr.beeps", beepsOn); if (!beepsOn && actx) { try { actx.close(); } catch (e) {} actx = null; } });
   $("sw-voice").addEventListener("click", function () { voiceWanted = !voiceWanted; setSwitch($("sw-voice"), voiceWanted); store.set("wr.voice", voiceWanted); if (voiceWanted) startListening(); else stopListening(); });
 
   /* ======================= Sound & speech ======================= */
   var actx = null;
-  function initAudio() { try { if (!actx) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); } if (actx && actx.state === "suspended") actx.resume(); } catch (e) {} }
+  function initAudio() { if (!beepsOn) return; try { if (!actx) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); } if (actx && actx.state === "suspended") actx.resume(); } catch (e) {} }
   function beep(freq, ms, vol) {
-    if (!actx) return;
+    if (!beepsOn || !actx) return;
     try { var o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime; o.type = "square"; o.frequency.value = freq;
       g.gain.setValueAtTime(vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + ms / 1000);
       o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + ms / 1000 + 0.02); } catch (e) {}
@@ -541,9 +548,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   var RING = 282.74;
   var PHASE = { prep: ["Get ready", "--prep"], work: ["Work", "--work"], rest: ["Rest", "--rest"], hold: ["Hold", "--hold"], stretch: ["Stretch", "--stretch"] };
 
-  function requestWake() { try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; }).catch(function () {}); } catch (e) {} }
+  function wakeMsg(t) { var n = $("wake-note"); if (n) n.textContent = t; }
+  function requestWake() {
+    if (wakeLock || document.visibilityState !== "visible") return;
+    try {
+      if (!navigator.wakeLock) { wakeMsg("This browser can't keep the screen on. Use Chrome, or raise the screen timeout in Android settings."); return; }
+      navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; wakeMsg(""); w.addEventListener("release", function () { wakeLock = null; }); }).catch(function () { wakeMsg("The phone refused to keep the screen on (Battery Saver can do this)."); });
+    } catch (e) {}
+  }
   function releaseWake() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
-  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && running) requestWake(); });
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && (running || keepOn)) requestWake(); });
+  document.addEventListener("click", function () { if (keepOn || running) requestWake(); }, true);
 
   function startWorkout(name, id, st) {
     initAudio();
@@ -706,7 +721,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   function finish(completed) {
     clearInterval(timer); timer = null;
     var workRounds = 0; for (var i = 0; i < Math.min(idx, steps.length); i++) if (steps[i].k === "timed" && steps[i].phase === "work" && steps[i].sec.indexOf("Warm") !== 0) workRounds++;
-    running = false; setPaused(false); releaseWake();
+    running = false; setPaused(false); if (!keepOn) releaseWake();
     var entry = { id: "h" + Date.now(), at: startedAt, end: Date.now(), plan: planId, name: planName, secs: Math.round(activeSecs), completed: completed,
       sets: setsDone, weights: sessionW, workRounds: workRounds, count: counterN, skipped: skippedSecs, calfStage: planId === "wed" ? calfStage : undefined, rounds: workRounds };
     var saved = activeSecs >= 10;
@@ -894,6 +909,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   });
 
   renderPlans(); renderFields(); renderSaved(); micUI();
+  if (keepOn) requestWake();
   if (voiceWanted) startListening();
 })();
 </script>
