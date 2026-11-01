@@ -215,6 +215,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     </div>
     <div class="upnext" id="t-next"></div>
     <button class="count" id="counter"><span>Tap to count reps</span><b id="count-n">0</b></button>
+    <button class="bigbtn" id="t-done" hidden>Done · start rest</button>
   </div>
 
   <div class="stage" id="stage-reps" hidden>
@@ -358,6 +359,56 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     return s;
   }
 
+  // Mon/Fri: bar circuit + chest/abs finisher + right calf (calendar version of 1 Nov 2026)
+  // Slow push-ups: counted out loud, 3 s down + 1 s up per rep.
+  function Tempo(sec, name, ex, set, sets, reps, down, up) {
+    return { k: "timed", phase: "work", sec: sec, name: name, ex: ex, set: set, sets: sets, reps: reps + " reps (counted)", tempo: { reps: reps, down: down, up: up },
+      secs: reps * (down + up), cue: "Slow push-ups, set " + set + " of " + sets + ". I'll count. " + down + " seconds down, " + up + " up. Down." };
+  }
+  var CIRCUIT = [
+    ["R", "Push-ups", "pushup", "10–15 reps", "Straight line from head to heels, chest to the floor."],
+    ["R", "Pull-ups", "pullup", "5–8 reps", "Stop 2 reps before you can't do another."],
+    ["H", "Dead hang", 40, "Hang from the bar, shoulders slightly engaged. 30 to 45 seconds."],
+    ["H", "Hollow hold", 25, "Lower back pressed into the floor, arms and legs long."],
+    ["R", "Hanging knee raises", "kneeraise", "8–12 reps", "Slow, no swinging. Knees up towards your chest."]
+  ];
+  function buildMonFri(calfStage) {
+    var s = [], w = "Warm-up";
+    s.push(T(w, "work", "Arm circles", 60, "Bar circuit. Warm-up first. Arm circles, 1 minute. Forwards, then backwards."));
+    s.push(R(w, "Bodyweight squats", "bwsquat", 1, 1, "10 reps", "Slow and controlled."));
+    s.push(R(w, "Slow mountain climbers", "slowmc", 1, 1, "10 reps", "Easy pace, just waking the body up."));
+    s.push(T(w, "rest", "Rest", 20, "Bar circuit next. 4 rounds. First up, push-ups."));
+    for (var r = 1; r <= 4; r++) {
+      var sec = "Bar circuit · Round " + r + " of 4";
+      CIRCUIT.forEach(function (mv, i) {
+        if (mv[0] === "R") s.push(R(sec, mv[1], mv[2], r, 4, mv[3], mv[4]));
+        else s.push(T(sec, "hold", mv[1], mv[2], mv[1] + ", " + mv[2] + " seconds. Hold it.", { how: mv[3] }));
+        if (i < CIRCUIT.length - 1) s.push(T(sec, "rest", "Rest", 30, "Rest 30 seconds. Next, " + CIRCUIT[i + 1][1].toLowerCase() + "."));
+        else if (r < 4) s.push(T(sec, "rest", "Round rest", 60, "Round " + r + " done. Rest 1 minute. Next, push-ups."));
+        else s.push(T(sec, "rest", "Rest", 60, "Circuit done. Rest 1 minute. Chest and abs finisher next. Get your dumbbells."));
+      });
+    }
+    var f = "Chest & abs finisher";
+    s.push(W(f, "Dumbbell floor press", "fpress"));
+    for (var p = 1; p <= 3; p++) {
+      s.push(R(f, "Dumbbell floor press", "fpress", p, 3, "10–12 reps", "Lie on the floor, press both dumbbells up. Elbows touch down each rep."));
+      s.push(T(f, "rest", "Rest", 45, "Rest 45 seconds. Next, " + (p < 3 ? "floor press, set " + (p + 1) : "slow push-ups. I'll count them for you") + "."));
+    }
+    for (var q = 1; q <= 2; q++) {
+      s.push(T(f, "prep", "Push-up position", 5, "Get into push-up position. Feet on a step if normal ones feel easy."));
+      s.push(Tempo(f, "Slow push-ups", "slowpush", q, 2, 8, 3, 1));
+      s.push(T(f, "rest", "Rest", 45, "Rest 45 seconds. Next, " + (q < 2 ? "slow push-ups, set 2" : "side planks") + "."));
+    }
+    for (var sp = 1; sp <= 2; sp++) {
+      s.push(T(f, "prep", "Side plank, left", 5, "Side plank on your left side."));
+      s.push(T(f, "hold", "Side plank · left", 25, "Left side plank, 25 seconds. Hold."));
+      s.push(T(f, "prep", "Switch sides", 5, "Switch to your right side."));
+      s.push(T(f, "hold", "Side plank · right", 25, "Right side plank, 25 seconds. Hold."));
+      if (sp === 1) s.push(T(f, "rest", "Rest", 30, "Rest 30 seconds. Then side planks again."));
+    }
+    return s.concat(calfSteps(calfStage));
+  }
+
   var HIIT_MOVES = [
     ["Kettlebell swings", "Hinge at the hips, snap them forward. Arms just guide the bell."],
     ["Burpees", "Step back instead of jumping if you need to."],
@@ -424,6 +475,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     var box = $("view-plans"); box.innerHTML = "";
     var dow = new Date().getDay();
     var plans = [
+      { id: "mf", day: [1, 5], title: "Mon & Fri · Bar circuit", sub: "Bar circuit, chest & abs, right calf", build: function () { return buildMonFri(calfStage); },
+        parts: [["Warm-up", "Arm circles, squats, mountain climbers"], ["Bar circuit", "4 rounds: push-ups, pull-ups, dead hang, hollow hold, knee raises"], ["Chest & abs", "Floor press 3 × 10–12, counted slow push-ups 2 × 8, side planks"], ["Right calf", "Stage " + calfStage]] },
       { id: "wed", day: 3, title: "Wednesday · Strength", sub: "Legs, upper body, core, calf, mobility", build: function () { return buildWednesday(calfStage); },
         parts: [["Strength", "3 pairs × 3 sets of 10, 60 s rest"], ["Core finisher", "2 rounds: bridge, plank, dead bug, side planks"], ["Right calf", "Stage " + calfStage], ["Mobility", "30 s stretches each side, cat-cow, open book"]] },
       { id: "sat", day: 6, title: "Saturday · HIIT", sub: "Kettlebell & bodyweight circuit", build: buildSaturday,
@@ -431,18 +484,19 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     ];
     plans.forEach(function (p) {
       var steps = p.build();
-      var el = document.createElement("div"); el.className = "card" + (p.day === dow ? " today" : "");
+      var isToday = [].concat(p.day).indexOf(dow) >= 0;
+      var el = document.createElement("div"); el.className = "card" + (isToday ? " today" : "");
       el.innerHTML = '<div class="cardhead"><h2></h2></div><span class="note"></span><ul class="sections"></ul>';
       el.querySelector("h2").textContent = p.title;
-      if (p.day === dow) { var pill = document.createElement("span"); pill.className = "pill"; pill.textContent = "Today"; el.querySelector(".cardhead").appendChild(pill); }
+      if (isToday) { var pill = document.createElement("span"); pill.className = "pill"; pill.textContent = "Today"; el.querySelector(".cardhead").appendChild(pill); }
       el.querySelector(".note").textContent = p.sub + " · about " + Math.round(estimate(steps) / 60) + " min";
       var ul = el.querySelector("ul");
       p.parts.forEach(function (pt) { var li = document.createElement("li"); li.innerHTML = "<b></b><span></span>"; li.querySelector("b").textContent = pt[0]; li.querySelector("span").textContent = pt[1]; ul.appendChild(li); });
-      if (p.id === "wed") {
+      if (p.id === "wed" || p.id === "mf") {
         var lab = document.createElement("span"); lab.className = "label"; lab.textContent = "Calf stage you're on"; el.appendChild(lab);
         var seg = document.createElement("div"); seg.className = "seg";
         [1, 2, 3, 4].forEach(function (n) {
-          var b = document.createElement("button"); b.id = "calf-" + n; b.textContent = "Stage " + n; b.setAttribute("aria-pressed", n === calfStage);
+          var b = document.createElement("button"); b.id = "calf-" + p.id + "-" + n; b.textContent = "Stage " + n; b.setAttribute("aria-pressed", n === calfStage);
           b.addEventListener("click", function () { calfStage = n; store.set("wr.calfStage", n); renderPlans(); });
           seg.appendChild(b);
         });
@@ -591,9 +645,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
       $("t-phase").textContent = p[0];
       $("t-name").textContent = s.name === p[0] ? "" : s.name;
       $("t-next").textContent = (s.how ? s.how + " · " : "") + nextDesc(idx);
-      $("counter").hidden = s.phase !== "work";
+      $("counter").hidden = s.phase !== "work" || !!s.tempo;
+      $("t-done").hidden = !s.tempo;
+      if (s.tempo) { tempoRep = 0; tempoPart = ""; $("t-done").textContent = doneLabel(idx); }
       show("timed");
-      if (announce) { if (s.phase === "work") beep(1250, 300, 0.25); else if (s.phase === "rest") beep(600, 300, 0.2); else if (s.phase === "hold") beep(1000, 300, 0.22); say(s.cue); }
+      if (announce) { if (s.phase === "work") beep(1250, 300, 0.25); else if (s.phase === "rest") beep(600, 300, 0.2); else if (s.phase === "hold") beep(1000, 300, 0.22); say(cuePrefix + s.cue); cuePrefix = ""; }
       drawTimed();
     } else if (s.k === "reps") {
       $("run").style.setProperty("--phase", "var(--reps)");
@@ -603,6 +659,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
       $("r-how").textContent = s.how;
       $("r-next").textContent = nextDesc(idx);
       $("r-elapsed").textContent = "0:00";
+      $("r-done").textContent = doneLabel(idx);
       show("reps");
       if (announce) { beep(1250, 250, 0.22); say(s.name + (s.sets > 1 ? ", set " + s.set + " of " + s.sets : "") + ". " + s.reps.replace("–", " to ") + (kg ? ", " + kg + " kilos" : "") + ". Say done when you're finished."); }
     } else {
@@ -615,6 +672,32 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
       if (announce) say("What weight for " + s.name + "? " + (lw ? "Last time was " + (lw.kg ? lw.kg + " kilos." : "bodyweight.") : "") + " Tap it in, or say the number of kilos.");
     }
   }
+  // Button under counted reps: says it starts the rest when a rest comes next
+  function doneLabel(i) { var n = steps[i + 1]; return n && n.k === "timed" && n.phase === "rest" ? "Done \u00b7 start rest" : "Set done"; }
+  // Counted reps (slow push-ups): speaks "Down, two, three, Up" each rep, then the rep number
+  var NUMWORD = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve"];
+  var tempoRep = 0, tempoPart = "", cuePrefix = "";
+  function tempoPos(t, el) {
+    var per = t.down + t.up, rep = Math.min(t.reps, Math.floor(el / per) + 1), inRep = el - (rep - 1) * per;
+    var part = inRep < t.down ? "down" + Math.floor(inRep) : "up";
+    return { rep: rep, part: part, down: inRep < t.down, inRep: inRep };
+  }
+  function tempoTick(s, el) {
+    var t = s.tempo; if (el < 0) return;
+    var p = tempoPos(t, el);
+    if (p.rep === tempoRep && p.part === tempoPart) return;
+    var first = p.rep !== tempoRep;
+    if (first && p.rep > 1) { beep(1000, 80, 0.18); say(NUMWORD[p.rep - 1] + ". Down."); }
+    else if (!first && p.part === "up") { beep(1250, 80, 0.2); say("Up"); }
+    else if (!first && p.down) say(String(Math.floor(p.inRep) + 1));
+    tempoRep = p.rep; tempoPart = p.part;
+  }
+  function tempoDraw(s) {
+    var t = s.tempo, p = tempoPos(t, Math.max(0, s.secs - remain));
+    $("t-phase").textContent = p.down ? "Down \u00b7 " + (Math.floor(p.inRep) + 1) : "Up";
+    $("t-name").textContent = s.name + " \u00b7 set " + s.set + " of " + s.sets;
+    $("t-clock").textContent = p.rep + "/" + t.reps;
+  }
   function tick() {
     var now = Date.now();
     if (!paused) activeSecs += (now - lastTick) / 1000;
@@ -624,6 +707,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     if (s.k === "reps") { $("r-elapsed").textContent = fmt((now - stepStart) / 1000); return; }
     if (s.k !== "timed") return;
     remain = (segEnd - now) / 1000;
+    if (s.tempo) { tempoTick(s, s.secs - remain); if (remain <= 0) { cuePrefix = NUMWORD[s.tempo.reps] + ". Done. "; advance(); return; } drawTimed(); return; }
     var sec = Math.ceil(remain);
     if (sec !== lastSec) {
       if (sec <= 3 && sec >= 1) { beep(880, 120, 0.2); if (s.secs >= 8) say(String(sec)); }
@@ -636,12 +720,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   }
   function drawTimed() {
     var s = steps[idx];
-    $("t-clock").textContent = fmt(remain);
+    if (s.tempo) { tempoDraw(s); } else $("t-clock").textContent = fmt(remain);
     $("ring").setAttribute("stroke-dashoffset", (RING * (1 - Math.max(0, remain) / s.secs)).toFixed(2));
   }
   function advance() {
     var s = steps[idx];
-    if (s.k === "reps") setsDone.push({ ex: s.ex, name: s.name, set: s.set, reps: s.reps, kg: sessionW[s.ex], secs: Math.round((Date.now() - stepStart) / 1000), sec: s.sec });
+    if (s.k === "reps" || s.tempo) setsDone.push({ ex: s.ex, name: s.name, set: s.set, reps: s.reps, kg: sessionW[s.ex], secs: Math.round((Date.now() - stepStart) / 1000), sec: s.sec });
     idx++;
     if (idx >= steps.length) { finish(true); return; }
     enterStep(true);
@@ -671,7 +755,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   }
   function back() {
     if (!running || idx === 0) return;
-    idx--; if (steps[idx].k === "reps") setsDone.pop();
+    idx--; if (steps[idx].k === "reps" || steps[idx].tempo) setsDone.pop();
     if (paused) setPaused(false);
     enterStep(true);
   }
@@ -707,7 +791,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     (h.sets || []).forEach(function (s) { if (!byEx[s.ex]) { byEx[s.ex] = { name: s.name, n: 0, reps: s.reps, kg: s.kg }; order.push(s.ex); } byEx[s.ex].n++; if (s.kg !== undefined) byEx[s.ex].kg = s.kg; });
     order.forEach(function (k) { var e = byEx[k]; lines.push("• " + e.name + ": " + e.n + (e.n > 1 ? " sets" : " set") + " × " + e.reps + (e.kg ? " @ " + e.kg + " kg" : "")); });
     if (h.plan === "sat") lines.push("• Circuit: " + (h.workRounds || 0) + " of 20 work intervals (40 s on / 20 s off)" + weightsLine(h, ["kbswing", "thruster"]));
-    if (h.plan === "wed" && h.calfStage) lines.push("• Right calf: stage " + h.calfStage);
+    if ((h.plan === "wed" || h.plan === "mf") && h.calfStage) lines.push("• Right calf: stage " + h.calfStage);
     if (h.plan === "quick") lines.push("• " + (h.workRounds || 0) + " work intervals");
     if (h.count) lines.push("• Rep count: " + h.count);
     if (h.skipped && h.skipped.length) lines.push("• Skipped: " + h.skipped.join(", "));
@@ -723,7 +807,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     var workRounds = 0; for (var i = 0; i < Math.min(idx, steps.length); i++) if (steps[i].k === "timed" && steps[i].phase === "work" && steps[i].sec.indexOf("Warm") !== 0) workRounds++;
     running = false; setPaused(false); if (!keepOn) releaseWake();
     var entry = { id: "h" + Date.now(), at: startedAt, end: Date.now(), plan: planId, name: planName, secs: Math.round(activeSecs), completed: completed,
-      sets: setsDone, weights: sessionW, workRounds: workRounds, count: counterN, skipped: skippedSecs, calfStage: planId === "wed" ? calfStage : undefined, rounds: workRounds };
+      sets: setsDone, weights: sessionW, workRounds: workRounds, count: counterN, skipped: skippedSecs, calfStage: (planId === "wed" || planId === "mf") ? calfStage : undefined, rounds: workRounds };
     var saved = activeSecs >= 10;
     if (saved) { var h = store.get("wr.history", []); h.push(entry); if (h.length > 400) h = h.slice(-400); store.set("wr.history", h); }
     if (completed) { beep(1500, 700, 0.25); say("Workout complete. Well done."); } else say("Stopped.");
@@ -760,6 +844,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   $("c-back").addEventListener("click", back);
   $("c-skipsec").addEventListener("click", skipSection);
   $("r-done").addEventListener("click", next);
+  $("t-done").addEventListener("click", next);
   $("counter").addEventListener("click", function () { addCount(1); });
   $("w-ok").addEventListener("click", function () { confirmWeight(); });
   $("w-bw").addEventListener("click", function () { confirmWeight(0); });
