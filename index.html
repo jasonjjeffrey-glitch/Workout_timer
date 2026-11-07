@@ -370,26 +370,67 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
       secs: lead + reps * (down + up),
       cue: "Slow push-ups, set " + set + ". Down for " + down + ", up for " + up + "." };
   }
+  // Pull-ups come first (fresh), then the circuit without them. Dead hang last so grip isn't tired for the pull-ups.
+  // Mon = volume (EMOM), Fri = strength (ladders + negatives). Grip swaps weekly: overhand / underhand chin-ups.
   var CIRCUIT = [
     ["R", "Push-ups", "pushup", "10–15 reps", "Straight line from head to heels, chest to the floor."],
-    ["R", "Pull-ups", "pullup", "5–8 reps", "Stop 2 reps before you can't do another."],
-    ["H", "Dead hang", 40, "Hang from the bar, shoulders slightly engaged. 30 to 45 seconds."],
     ["H", "Hollow hold", 25, "Lower back pressed into the floor, arms and legs long."],
-    ["R", "Hanging knee raises", "kneeraise", "8–12 reps", "Slow, no swinging. Knees up towards your chest."]
+    ["R", "Hanging knee raises", "kneeraise", "8–12 reps", "Slow, no swinging. Knees up towards your chest."],
+    ["H", "Dead hang", 40, "Hang from the bar, shoulders slightly engaged. 30 to 45 seconds."]
   ];
-  function buildMonFri(calfStage) {
+  function gripThisWeek() {
+    var anchor = new Date(2026, 10, 9).getTime(); // Mon 9 Nov 2026 = overhand week
+    var wk = Math.floor((Date.now() - anchor) / (7 * 864e5));
+    return ((wk % 2) + 2) % 2 === 0 ? "overhand" : "chin-up";
+  }
+  function gripText(g) { return g === "overhand" ? "overhand grip, palms away" : "chin-up grip, palms facing you"; }
+  var emomReps = store.get("wr.emomReps", 2);
+  function pullBlock(day) {
+    var s = [], g = gripThisWeek(), gt = gripText(g), lift = g === "overhand" ? "Pull-ups" : "Chin-ups";
+    var w = "Warm-up";
+    s.push(T(w, "rest", "Rest", 15, "Scapular pulls next. Hang with straight arms and pull your shoulder blades down. No elbow bend."));
+    for (var a = 1; a <= 2; a++) {
+      s.push(R(w, "Scapular pulls", "scappull", a, 2, "8 reps", "Straight arms. Shoulder blades down and back, hold 1 second."));
+      s.push(T(w, "rest", "Rest", 30, a < 2 ? "Rest 30 seconds. Scapular pulls, set 2." : "Rest 30 seconds. " + lift + " next, " + gt + "."));
+    }
+    if (day === "mon") {
+      var sec = lift + " · EMOM 10 min";
+      for (var m = 1; m <= 10; m++) {
+        s.push(T(sec, "work", lift + " · minute " + m + " of 10", 60,
+          (m === 1 ? "Every minute on the minute, " + emomReps + " reps, " + gt + ". " : m === 10 ? "Last minute. " : "Minute " + m + ". ") + emomReps + " " + lift.toLowerCase() + ", then rest.",
+          { how: "Do " + emomReps + " clean reps, then rest until the next minute. Never to failure.", ex: "pullup", set: m, sets: 10, reps: emomReps + " reps (" + g + ")", log: true }));
+      }
+    } else {
+      var sec2 = lift + " · Ladders 1-2-3";
+      for (var l = 1; l <= 3; l++) {
+        for (var rung = 1; rung <= 3; rung++) {
+          s.push(R(sec2, lift + " · ladder " + l + ", " + rung + (rung === 1 ? " rep" : " reps"), "pullup", (l - 1) * 3 + rung, 9, rung + (rung === 1 ? " rep" : " reps") + " (" + g + ")", "Clean reps, full hang at the bottom."));
+          if (rung < 3) s.push(T(sec2, "rest", "Rest", 30, "Rest 30 seconds. Next, " + (rung + 1) + " reps."));
+        }
+        s.push(T(sec2, "rest", "Ladder rest", 75, l < 3 ? "Ladder " + l + " done. Rest 75 seconds. Next ladder starts with 1 rep." : "Ladders done. Rest 75 seconds. Then 3 slow negatives."));
+      }
+      var sec3 = "Slow negatives";
+      for (var n = 1; n <= 3; n++) {
+        s.push(R(sec3, "Negative " + lift.toLowerCase().replace(/s$/, ""), "negpull", n, 3, "1 slow rep, 4–5 sec down", "Jump or step to the top, then lower as slowly as you can."));
+        s.push(T(sec3, "rest", "Rest", 45, n < 3 ? "Rest 45 seconds. Negative " + (n + 1) + " next." : "Rest 45 seconds. Bar circuit next. 3 rounds. First up, push-ups."));
+      }
+    }
+    if (day === "mon") s.push(T("Bar circuit", "rest", "Rest", 60, "Pull-ups done. Rest 1 minute. Bar circuit next. 3 rounds. First up, push-ups."));
+    return s;
+  }
+  function buildMonFri(calfStage, day) {
     var s = [], w = "Warm-up";
-    s.push(T(w, "work", "Arm circles", 60, "Bar circuit. Warm-up first. Arm circles, 1 minute. Forwards, then backwards."));
+    s.push(T(w, "work", "Arm circles", 60, (day === "mon" ? "Monday" : "Friday") + " bar session. Warm-up first. Arm circles, 1 minute. Forwards, then backwards."));
     s.push(R(w, "Bodyweight squats", "bwsquat", 1, 1, "10 reps", "Slow and controlled."));
     s.push(R(w, "Slow mountain climbers", "slowmc", 1, 1, "10 reps", "Easy pace, just waking the body up."));
-    s.push(T(w, "rest", "Rest", 20, "Bar circuit next. 4 rounds. First up, push-ups."));
-    for (var r = 1; r <= 4; r++) {
-      var sec = "Bar circuit · Round " + r + " of 4";
+    s = s.concat(pullBlock(day));
+    for (var r = 1; r <= 3; r++) {
+      var sec = "Bar circuit · Round " + r + " of 3";
       CIRCUIT.forEach(function (mv, i) {
-        if (mv[0] === "R") s.push(R(sec, mv[1], mv[2], r, 4, mv[3], mv[4]));
+        if (mv[0] === "R") s.push(R(sec, mv[1], mv[2], r, 3, mv[3], mv[4]));
         else s.push(T(sec, "hold", mv[1], mv[2], mv[1] + ", " + mv[2] + " seconds. Hold it.", { how: mv[3] }));
         if (i < CIRCUIT.length - 1) s.push(T(sec, "rest", "Rest", 30, "Rest 30 seconds. Next, " + CIRCUIT[i + 1][1].toLowerCase() + "."));
-        else if (r < 4) s.push(T(sec, "rest", "Round rest", 60, "Round " + r + " done. Rest 1 minute. Next, push-ups."));
+        else if (r < 3) s.push(T(sec, "rest", "Round rest", 60, "Round " + r + " done. Rest 1 minute. Next, push-ups."));
         else s.push(T(sec, "rest", "Rest", 60, "Circuit done. Rest 1 minute. Chest and abs finisher next. Get your dumbbells."));
       });
     }
@@ -480,8 +521,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     var box = $("view-plans"); box.innerHTML = "";
     var dow = new Date().getDay();
     var plans = [
-      { id: "mf", day: [1, 5], title: "Mon & Fri · Bar circuit", sub: "Bar circuit, chest & abs, right calf", build: function () { return buildMonFri(calfStage); },
-        parts: [["Warm-up", "Arm circles, squats, mountain climbers"], ["Bar circuit", "4 rounds: push-ups, pull-ups, dead hang, hollow hold, knee raises"], ["Chest & abs", "Floor press 3 × 10–12, counted slow push-ups 2 × 8, side planks"], ["Right calf", "Stage " + calfStage]] },
+      { id: "mon", day: 1, title: "Monday · Bar session (volume)", sub: "Pull-up EMOM, bar circuit, chest & abs, right calf", build: function () { return buildMonFri(calfStage, "mon"); },
+        parts: [["Warm-up", "Arm circles, squats, mountain climbers, scapular pulls 2 × 8"], ["Pull-ups", "EMOM 10 min: " + emomReps + " reps each minute · " + gripText(gripThisWeek())], ["Bar circuit", "3 rounds: push-ups, hollow hold, knee raises, dead hang"], ["Chest & abs", "Floor press 3 × 10–12, counted slow push-ups 2 × 8, side planks"], ["Right calf", "Stage " + calfStage]] },
+      { id: "fri", day: 5, title: "Friday · Bar session (strength)", sub: "Pull-up ladders & negatives, bar circuit, chest & abs, right calf", build: function () { return buildMonFri(calfStage, "fri"); },
+        parts: [["Warm-up", "Arm circles, squats, mountain climbers, scapular pulls 2 × 8"], ["Pull-ups", "Ladder 1-2-3 × 3, then 3 slow negatives · " + gripText(gripThisWeek())], ["Bar circuit", "3 rounds: push-ups, hollow hold, knee raises, dead hang"], ["Chest & abs", "Floor press 3 × 10–12, counted slow push-ups 2 × 8, side planks"], ["Right calf", "Stage " + calfStage]] },
       { id: "wed", day: 3, title: "Wednesday · Strength", sub: "Legs, upper body, core, calf, mobility", build: function () { return buildWednesday(calfStage); },
         parts: [["Strength", "3 pairs × 3 sets of 10, 60 s rest"], ["Core finisher", "2 rounds: bridge, plank, dead bug, side planks"], ["Right calf", "Stage " + calfStage], ["Mobility", "30 s stretches each side, cat-cow, open book"]] },
       { id: "sat", day: 6, title: "Saturday · HIIT", sub: "Kettlebell & bodyweight circuit", build: buildSaturday,
@@ -497,7 +540,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
       el.querySelector(".note").textContent = p.sub + " · about " + Math.round(estimate(steps) / 60) + " min";
       var ul = el.querySelector("ul");
       p.parts.forEach(function (pt) { var li = document.createElement("li"); li.innerHTML = "<b></b><span></span>"; li.querySelector("b").textContent = pt[0]; li.querySelector("span").textContent = pt[1]; ul.appendChild(li); });
-      if (p.id === "wed" || p.id === "mf") {
+      if (p.id === "mon") {
+        var lab2 = document.createElement("span"); lab2.className = "label"; lab2.textContent = "Pull-ups per minute (go to 3 when 2 feels easy)"; el.appendChild(lab2);
+        var seg2 = document.createElement("div"); seg2.className = "seg";
+        [2, 3].forEach(function (n) {
+          var b = document.createElement("button"); b.id = "emom-" + n; b.textContent = n + " reps"; b.setAttribute("aria-pressed", n === emomReps);
+          b.addEventListener("click", function () { emomReps = n; store.set("wr.emomReps", n); renderPlans(); });
+          seg2.appendChild(b);
+        });
+        el.appendChild(seg2);
+      }
+      if (p.id === "wed" || p.id === "mon" || p.id === "fri") {
         var lab = document.createElement("span"); lab.className = "label"; lab.textContent = "Calf stage you're on"; el.appendChild(lab);
         var seg = document.createElement("div"); seg.className = "seg";
         [1, 2, 3, 4].forEach(function (n) {
@@ -742,7 +795,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   }
   function advance() {
     var s = steps[idx];
-    if (s.k === "reps" || s.tempo) setsDone.push({ ex: s.ex, name: s.name, set: s.set, reps: s.reps, kg: sessionW[s.ex], secs: Math.round((Date.now() - stepStart) / 1000), sec: s.sec });
+    if (s.k === "reps" || s.tempo || s.log) setsDone.push({ ex: s.ex, name: s.name, set: s.set, reps: s.reps, kg: sessionW[s.ex], secs: Math.round((Date.now() - stepStart) / 1000), sec: s.sec });
     idx++;
     if (idx >= steps.length) { finish(true); return; }
     enterStep(true);
@@ -772,7 +825,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   }
   function back() {
     if (!running || idx === 0) return;
-    idx--; if (steps[idx].k === "reps" || steps[idx].tempo) setsDone.pop();
+    idx--; if (steps[idx].k === "reps" || steps[idx].tempo || steps[idx].log) setsDone.pop();
     if (paused) setPaused(false);
     enterStep(true);
   }
@@ -808,7 +861,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     (h.sets || []).forEach(function (s) { if (!byEx[s.ex]) { byEx[s.ex] = { name: s.name, n: 0, reps: s.reps, kg: s.kg }; order.push(s.ex); } byEx[s.ex].n++; if (s.kg !== undefined) byEx[s.ex].kg = s.kg; });
     order.forEach(function (k) { var e = byEx[k]; lines.push("• " + e.name + ": " + e.n + (e.n > 1 ? " sets" : " set") + " × " + e.reps + (e.kg ? " @ " + e.kg + " kg" : "")); });
     if (h.plan === "sat") lines.push("• Circuit: " + (h.workRounds || 0) + " of 20 work intervals (40 s on / 20 s off)" + weightsLine(h, ["kbswing", "thruster"]));
-    if ((h.plan === "wed" || h.plan === "mf") && h.calfStage) lines.push("• Right calf: stage " + h.calfStage);
+    if ((h.plan === "wed" || h.plan === "mf" || h.plan === "mon" || h.plan === "fri") && h.calfStage) lines.push("• Right calf: stage " + h.calfStage);
     if (h.plan === "quick") lines.push("• " + (h.workRounds || 0) + " work intervals");
     if (h.count) lines.push("• Rep count: " + h.count);
     if (h.skipped && h.skipped.length) lines.push("• Skipped: " + h.skipped.join(", "));
@@ -824,7 +877,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     var workRounds = 0; for (var i = 0; i < Math.min(idx, steps.length); i++) if (steps[i].k === "timed" && steps[i].phase === "work" && steps[i].sec.indexOf("Warm") !== 0) workRounds++;
     running = false; setPaused(false); if (!keepOn) releaseWake();
     var entry = { id: "h" + Date.now(), at: startedAt, end: Date.now(), plan: planId, name: planName, secs: Math.round(activeSecs), completed: completed,
-      sets: setsDone, weights: sessionW, workRounds: workRounds, count: counterN, skipped: skippedSecs, calfStage: (planId === "wed" || planId === "mf") ? calfStage : undefined, rounds: workRounds };
+      sets: setsDone, weights: sessionW, workRounds: workRounds, count: counterN, skipped: skippedSecs, calfStage: (planId === "wed" || planId === "mon" || planId === "fri") ? calfStage : undefined, rounds: workRounds };
     var saved = activeSecs >= 10;
     if (saved) { var h = store.get("wr.history", []); h.push(entry); if (h.length > 400) h = h.slice(-400); store.set("wr.history", h); }
     if (completed) { beep(1500, 700, 0.25); say("Workout complete. Well done."); } else say("Stopped.");
