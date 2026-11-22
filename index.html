@@ -484,6 +484,197 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     return s;
   }
 
+
+  /* ======================= Kochi hotel gym week (23-26 Nov 2026) ======================= */
+  // Partner sessions, no bike, no running or jumping. "I go, you go" = your set, then your partner's set (your rest).
+  function PT(sec, name, ex, set, sets, reps) {
+    return { k: "reps", sec: sec, name: "Partner · " + name, ex: ex, set: set, sets: sets, reps: reps, partner: true,
+      how: "Your rest. Spot them, set the safety stops or change the weight. Tap when they finish." };
+  }
+  // exs: [id, name, sets, reps, how]; each exercise: all sets alternating you / partner
+  function altBlock(s, sec, exs) {
+    exs.forEach(function (e) { s.push(W(sec, e[1], e[0])); });
+    exs.forEach(function (e, ei) {
+      for (var set = 1; set <= e[2]; set++) {
+        s.push(R(sec, e[1], e[0], set, e[2], e[3], e[4]));
+        s.push(PT(sec, e[1], e[0], set, e[2], e[3]));
+      }
+      if (ei < exs.length - 1) s.push(T(sec, "prep", "Change over", 30, "Next, " + exs[ei + 1][1].toLowerCase() + ". Same again: you go, then your partner."));
+    });
+  }
+  function stretchLR(s, sec, name, secs) {
+    s.push(T(sec, "stretch", name + " · left", secs, name + ", left side."));
+    s.push(T(sec, "stretch", name + " · right", secs, "Switch. " + name + ", right side."));
+  }
+  function buildKochiMon() {
+    var s = [], w = "Warm-up";
+    s.push(T(w, "work", "Elliptical, easy", 300, "Kochi Monday: upper body and abs. Elliptical, easy, 5 minutes, side by side."));
+    s.push(T(w, "work", "Arm circles", 60, "Off the elliptical. Arm circles, 1 minute. Forwards, then backwards."));
+    s.push(R(w, "Cat-cow", "catcow", 1, 1, "10 slow reps", "Round the back, then arch. Move with your breath."));
+    s.push(R(w, "World's greatest stretch", "wgs", 1, 1, "5 each side", "Lunge, hand down, rotate the other arm to the ceiling."));
+    altBlock(s, "Block A · I go, you go", [
+      ["latpull", "Lat pulldown", 4, "8–10 reps", "Pull to the top of your chest, elbows down and back. Stands in for pull-ups."],
+      ["smbench", "Smith bench press", 4, "8–10 reps", "Bar to mid-chest, feet flat, shoulder blades squeezed."]]);
+    s.push(T("Block B · I go, you go", "rest", "Rest", 45, "Block A done. Rest 45 seconds. Block B: Smith inverted rows, then shoulder press."));
+    altBlock(s, "Block B · I go, you go", [
+      ["invrow", "Smith inverted row", 3, "10 reps", "Bar at hip height, heels on the floor, body straight. Too easy? Lower the bar or feet on the bench."],
+      ["spress", "Smith or machine shoulder press", 3, "10 reps", "Press overhead without arching your lower back."]]);
+    s.push(T("Block C · I go, you go", "rest", "Rest", 45, "Block B done. Rest 45 seconds. Block C: cable curls, then push-ups on dumbbells."));
+    altBlock(s, "Block C · I go, you go", [
+      ["curl", "Cable bicep curl", 3, "12 reps", "Elbows pinned to your sides, slow on the way down."],
+      ["dbpush", "Push-ups on dumbbells", 3, "Max minus 2", "Hands on the dumbbells, chest low, stop 2 reps before failure."]]);
+    for (var r = 1; r <= 3; r++) {
+      var a = "Abs together · Round " + r + " of 3";
+      s.push(T(a, "prep", "Dead bug", 5, (r === 1 ? "Abs together on the mats. 3 rounds. " : "") + "Dead bug position."));
+      s.push(T(a, "work", "Dead bug", 40, "Dead bug, 40 seconds. Lower back stays down."));
+      s.push(T(a, "prep", "Plank", 5, "Get into a plank."));
+      s.push(T(a, "hold", "Plank", 40, "Plank, 40 seconds. Hold it."));
+      s.push(T(a, "prep", "Side plank, left", 5, "Side plank on your left side."));
+      s.push(T(a, "hold", "Side plank · left", 30, "Left side plank, 30 seconds."));
+      s.push(T(a, "prep", "Switch sides", 5, "Switch to your right side."));
+      s.push(T(a, "hold", "Side plank · right", 30, "Right side plank, 30 seconds."));
+      s.push(T(a, "prep", "Hollow hold", 5, "On your back for a hollow hold."));
+      s.push(T(a, "hold", "Hollow hold", 30, "Hollow hold, 30 seconds. Lower back pressed down."));
+      if (r < 3) s.push(T(a, "rest", "Rest", 60, "Round " + r + " done. Rest 1 minute."));
+    }
+    var c = "Cool-down";
+    s.push(T(c, "rest", "Breather", 15, "Abs done. Cool-down stretches."));
+    stretchLR(s, c, "Chest doorway stretch", 45);
+    stretchLR(s, c, "Lat stretch", 45);
+    s.push(T(c, "stretch", "Child's pose", 60, "Child's pose, 1 minute. Breathe slowly. Great work."));
+    return s;
+  }
+  function buildKochiTue() {
+    var s = [], w = "Warm-up";
+    s.push(T(w, "work", "Elliptical, easy to steady", 300, "Kochi Tuesday: low-impact HIIT, standing in for the race. Elliptical, easy and building, 5 minutes."));
+    for (var u = 1; u <= 3; u++) {
+      s.push(T(w, "work", "Surge " + u + " of 3", 15, "Surge, 15 seconds. Pick it up."));
+      s.push(T(w, "rest", "Easy", 45, u < 3 ? "Easy, 45 seconds." : "Easy, 45 seconds. Then the relay. You start on the elliptical, your partner on the floor."));
+    }
+    s.push(W("Relay", "Dumbbell squat to press", "sqpress"));
+    s.push(W("Relay", "Renegade row", "renrow"));
+    var FLOOR = [["Dumbbell squat to press", "Squat, then drive up into a press."], ["Renegade row", "Plank on the dumbbells, row one side then the other, hips still."], ["Alternating reverse lunge", "Step back, back knee just off the floor. No jumping."]];
+    for (var r = 1; r <= 4; r++) {
+      var sec = "Relay · Round " + r + " of 4";
+      s.push(T(sec, "work", "Elliptical · hard", 180, (r === 4 ? "Last round. " : "Round " + r + ". ") + "Elliptical, 3 minutes hard. Race effort, about 8 out of 10. Partner on the floor."));
+      s.push(T(sec, "prep", "Swap", 10, "Swap. You're on the floor. First, dumbbell squat to press."));
+      FLOOR.forEach(function (mv, i) {
+        s.push(T(sec, "work", mv[0], 40, "40 seconds " + mv[0].toLowerCase() + ", let's go!", { how: mv[1] }));
+        s.push(T(sec, "rest", "Change", 20, i < 2 ? "Change. Next, " + FLOOR[i + 1][0].toLowerCase() + "." : (r < 4 ? "Swap back. Get on the elliptical." : "Relay done. Water break next.")));
+      });
+    }
+    s.push(T("Break", "rest", "Water", 120, "Relay done. 2 minutes, water. Then 10 elliptical sprints together."));
+    for (var k = 1; k <= 10; k++) {
+      var sp = "Sprints · " + k + " of 10";
+      s.push(T(sp, "work", "Sprint " + k + " of 10", 30, (k === 10 ? "Last one. " : "") + "30 seconds all-out!"));
+      s.push(T(sp, "rest", "Easy", 30, k < 10 ? "Easy, 30 seconds." : "Sprints done. Core together on the mats."));
+    }
+    for (var c = 1; c <= 2; c++) {
+      var cs = "Core together · Round " + c + " of 2";
+      s.push(T(cs, "work", "Slow mountain climbers", 40, "Slow mountain climbers, 40 seconds.", { how: "Hips level, controlled. No jumping." }));
+      s.push(T(cs, "work", "Russian twist", 40, "Russian twist with a dumbbell, 40 seconds."));
+      s.push(T(cs, "work", "Reverse crunch", 40, "Reverse crunch, 40 seconds. Knees to chest, lower slowly."));
+      s.push(T(cs, "rest", "Rest", 20, c < 2 ? "Rest 20 seconds. Round 2." : "Core done. Cool-down."));
+    }
+    var cd = "Cool-down";
+    s.push(T(cd, "work", "Elliptical, easy", 180, "Elliptical, easy, 3 minutes."));
+    stretchLR(s, cd, "Hip flexor lunge", 30);
+    stretchLR(s, cd, "Hamstring stretch", 30);
+    stretchLR(s, cd, "Figure-4 glute stretch", 30);
+    return s;
+  }
+  function buildKochiWed() {
+    var s = [], w = "Warm-up";
+    s.push(T(w, "work", "Elliptical, easy", 300, "Kochi Wednesday: legs and core. Elliptical, easy, 5 minutes."));
+    s.push(T(w, "work", "Leg swings", 60, "Leg swings, 1 minute. Front to back, then side to side, both legs."));
+    s.push(R(w, "Bodyweight squats", "bwsquat", 1, 1, "10 reps", "Slow and controlled."));
+    s.push(R(w, "Glute bridges", "bridge", 1, 1, "10 reps", "Squeeze at the top."));
+    altBlock(s, "Block A · I go, you go", [["smsquat", "Smith squat", 4, "8 reps", "Feet slightly forward, sit back and down. Partner sets the safety stops."]]);
+    var b = "Block B · Leg press + extension";
+    s.push(T(b, "rest", "Rest", 45, "Block A done. Rest 45 seconds. Block B: you start on the leg press, your partner on the leg extension, then swap."));
+    s.push(W(b, "Leg press", "legpress"));
+    s.push(W(b, "Leg extension", "legext"));
+    for (var set = 1; set <= 3; set++) {
+      s.push(R(b, "Leg press", "legpress", set, 3, "10 reps", "Feet hip-width, knees track over toes. Don't lock out."));
+      s.push(R(b, "Leg extension", "legext", set, 3, "12 reps", "Pause at the top, lower slowly."));
+    }
+    s.push(T("Block C · I go, you go", "rest", "Rest", 45, "Block B done. Rest 45 seconds. Block C: Smith Romanian deadlift."));
+    altBlock(s, "Block C · I go, you go", [["smrdl", "Smith Romanian deadlift", 3, "10 reps", "Soft knees, push the hips back, flat back."]]);
+    var d = "Block D · together on the mats";
+    s.push(T(d, "rest", "Rest", 45, "Block C done. Rest 45 seconds. Block D, together: split squats and single-leg glute bridges."));
+    s.push(W(d, "Dumbbell split squat", "split"));
+    for (var q = 1; q <= 3; q++) {
+      s.push(R(d, "Dumbbell split squat", "split", q, 3, "10 per leg", "Back knee just off the floor, front knee over the foot."));
+      s.push(R(d, "Single-leg glute bridge", "glute", q, 3, "10 per leg", "Drive through the heel, squeeze at the top."));
+      s.push(T(d, "rest", "Rest", 45, q < 3 ? "Rest 45 seconds." : "Rest 45 seconds. Core together next."));
+    }
+    for (var r = 1; r <= 3; r++) {
+      var cs = "Core together · Round " + r + " of 3";
+      s.push(T(cs, "prep", "Face to face plank", 5, "Plank facing your partner."));
+      s.push(T(cs, "hold", "Partner plank hand-taps", 40, "Plank hand-taps, 40 seconds. Tap your partner's opposite hand.", { how: "Hips still, feet wide." }));
+      s.push(T(cs, "prep", "Side plank, left", 5, "Side plank on your left side."));
+      s.push(T(cs, "hold", "Side plank · left", 30, "Left side plank, 30 seconds."));
+      s.push(T(cs, "prep", "Switch sides", 5, "Switch to your right side."));
+      s.push(T(cs, "hold", "Side plank · right", 30, "Right side plank, 30 seconds."));
+      s.push(T(cs, "work", "Lying leg raise", 40, "Lying leg raises, 40 seconds. Lower back pressed down."));
+      if (r < 3) s.push(T(cs, "rest", "Rest", 30, "Rest 30 seconds."));
+    }
+    var c = "Cool-down";
+    s.push(T(c, "rest", "Breather", 15, "Core done. Cool-down stretches."));
+    stretchLR(s, c, "Standing quad stretch", 30);
+    stretchLR(s, c, "Hamstring stretch", 30);
+    stretchLR(s, c, "Figure-4 glute stretch", 30);
+    stretchLR(s, c, "Hip flexor lunge", 30);
+    return s;
+  }
+  var THU_STATIONS = [
+    ["Leg press", "Feet hip-width, don't lock out."],
+    ["Lat pulldown", "Pull to the top of your chest."],
+    ["Dumbbell goblet squat", "Weight at your chest, sit between your knees."],
+    ["Smith incline press", "Bar to upper chest, controlled."],
+    ["Elliptical, hard", "Race effort."],
+    ["Dumbbell bent-over row", "Flat back, pull elbows to hips."],
+    ["Plank shoulder taps", "Feet wide, hips still."],
+    ["Dead bug", "Lower back stays down."]
+  ];
+  function buildKochiThu() {
+    var s = [], w = "Warm-up";
+    s.push(T(w, "work", "Elliptical, easy", 240, "Kochi Thursday: partner circuit, then the pool. Elliptical, easy, 4 minutes."));
+    s.push(T(w, "work", "Arm circles and leg swings", 60, "Arm circles, then leg swings, 1 minute."));
+    s.push(R(w, "Bodyweight squats", "bwsquat", 1, 1, "10 reps", "Slow and controlled."));
+    s.push(W("Circuit", "Leg press", "legpress"));
+    s.push(W("Circuit", "Lat pulldown", "latpull"));
+    s.push(W("Circuit", "Goblet squat", "gsquat"));
+    s.push(W("Circuit", "Smith incline press", "smincline"));
+    s.push(W("Circuit", "Dumbbell bent-over row", "row"));
+    s.push(T("Circuit", "prep", "Get ready", 15, "Circuit. 8 stations, 45 seconds on, 15 to move, 4 rounds. You start at the leg press, your partner at the elliptical."));
+    for (var r = 1; r <= 4; r++) {
+      var sec = "Circuit · Round " + r + " of 4";
+      THU_STATIONS.forEach(function (st, i) {
+        s.push(T(sec, "work", (i + 1) + ". " + st[0], 45, (r === 4 && i === 0 ? "Last round. " : "") + "45 seconds " + st[0].toLowerCase() + ", go!", { how: st[1] }));
+        var nx = THU_STATIONS[(i + 1) % 8][0].toLowerCase();
+        if (i < 7) s.push(T(sec, "rest", "Move", 15, "Move. Next, " + nx + "."));
+        else if (r === 2 || r === 3) s.push(T(sec, "rest", "Water", 60, "Round " + r + " done. 1 minute, water. Next, leg press."));
+        else if (r === 1) s.push(T(sec, "rest", "Move", 15, "Round 1 done. Back to the leg press."));
+      });
+    }
+    s.push(T("Pool", "prep", "Get to the pool", 300, "Circuit done. Great work. 5 minutes to get to the pool."));
+    s.push(T("Pool", "work", "Swim", 900, "Swim, 15 minutes. 10 minutes easy, mixed strokes, then 4 lengths of 25 metres brisk with 30 seconds rest. Gentle kick.", { how: "If your right calf tightens, switch to mostly arms or stop." }));
+    s.push(T("Cool-down", "stretch", "Float and stretch", 120, "Swim done. Easy float and shoulder stretches, 2 minutes. That's the Kochi week done."));
+    return s;
+  }
+  var KOCHI = [
+    { id: "kochi-mon", date: "2026-11-23", title: "Kochi Mon 23 Nov · Upper body + abs", sub: "Hotel gym with a partner · lat pulldown, Smith bench, rows, press, curls, abs", build: buildKochiMon,
+      parts: [["Warm-up", "Elliptical 5 min + mobility"], ["Block A", "Lat pulldown, Smith bench 4 × 8–10 · I go, you go"], ["Block B", "Smith inverted row, shoulder press 3 × 10"], ["Block C", "Cable curl 3 × 12, push-ups on dumbbells 3 × max−2"], ["Abs together", "3 rounds: dead bug, plank, side planks, hollow hold"], ["Cool-down", "Chest, lats, child's pose"]] },
+    { id: "kochi-tue", date: "2026-11-24", title: "Kochi Tue 24 Nov · Low-impact HIIT", sub: "Race replacement · elliptical relay, sprints, core", build: buildKochiTue,
+      parts: [["Warm-up", "Elliptical 8 min with 3 surges"], ["Relay", "4 rounds: you 3 min hard elliptical, then 3 min floor circuit (partner opposite)"], ["Sprints", "10 × 30 s all-out / 30 s easy"], ["Core together", "2 rounds: mountain climbers, Russian twist, reverse crunch"], ["Cool-down", "Elliptical 3 min + stretches"]] },
+    { id: "kochi-wed", date: "2026-11-25", title: "Kochi Wed 25 Nov · Legs + core", sub: "Smith squat, leg press, leg extension, RDL, split squats, core", build: buildKochiWed,
+      parts: [["Warm-up", "Elliptical 5 min + leg swings, squats, bridges"], ["Block A", "Smith squat 4 × 8 · I go, you go"], ["Block B", "Leg press 3 × 10 + leg extension 3 × 12 · swap machines"], ["Block C", "Smith RDL 3 × 10"], ["Block D", "Split squat + single-leg bridge 3 × 10 per leg"], ["Core together", "3 rounds: plank hand-taps, side planks, leg raises"]] },
+    { id: "kochi-thu", date: "2026-11-26", title: "Kochi Thu 26 Nov · Partner circuit + pool", sub: "8 stations × 4 rounds, then a 15-min swim", build: buildKochiThu,
+      parts: [["Warm-up", "Elliptical 4 min + mobility"], ["Circuit", "8 stations, 45 s on / 15 s move, 4 rounds · you start at 1, partner at 5"], ["Pool", "10 min easy, then 4 × 25 m brisk"], ["Cool-down", "Float and stretch"]] }
+  ];
+  function ymd(d) { return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+
   /* ======================= Quick timer ======================= */
   var FIELDS = [["prep","Get ready","Countdown before round 1",0,60,5,"time"],["work","Work","Each interval",5,1800,5,"time"],["rest","Rest","Between intervals",0,1800,5,"time"],["rounds","Rounds","Intervals per set",1,99,1,"num"],["sets","Sets","Number of blocks",1,20,1,"num"],["setRest","Rest between sets","Recovery between blocks",0,1800,15,"time"]];
   var DEFAULTS = { tabata: { mode: "tabata", prep: 10, work: 20, rest: 10, rounds: 8, sets: 1, setRest: 60 }, custom: { mode: "custom", prep: 10, work: 45, rest: 90, rounds: 5, sets: 1, setRest: 120 } };
@@ -530,9 +721,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
       { id: "sat", day: 6, title: "Saturday · HIIT", sub: "Kettlebell & bodyweight circuit", build: buildSaturday,
         parts: [["Warm-up", "5 min"], ["Main circuit", "4 rounds × 5 moves, 40 s on / 20 s off, 1 min between rounds"], ["Cool-down", "4 min"]] }
     ];
+    var today = ymd(new Date()), kochiToday = false;
+    if (today <= "2026-11-27") {
+      KOCHI.forEach(function (k) { if (k.date === today) kochiToday = true; });
+      plans = KOCHI.concat(plans);
+    }
     plans.forEach(function (p) {
       var steps = p.build();
-      var isToday = [].concat(p.day).indexOf(dow) >= 0;
+      var isToday = p.date ? p.date === today : (!kochiToday && [].concat(p.day).indexOf(dow) >= 0);
       var el = document.createElement("div"); el.className = "card" + (isToday ? " today" : "");
       el.innerHTML = '<div class="cardhead"><h2></h2></div><span class="note"></span><ul class="sections"></ul>';
       el.querySelector("h2").textContent = p.title;
@@ -711,7 +907,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
       drawTimed();
     } else if (s.k === "reps") {
       $("run").style.setProperty("--phase", "var(--reps)");
-      var kg = sessionW[s.ex];
+      var kg = s.partner ? undefined : sessionW[s.ex];
       $("r-name").textContent = s.name;
       $("r-detail").textContent = (s.sets > 1 ? "Set " + s.set + " of " + s.sets + " · " : "") + s.reps + (kg !== undefined ? " · " + kgText(kg) : "");
       $("r-how").textContent = s.how;
@@ -795,7 +991,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   }
   function advance() {
     var s = steps[idx];
-    if (s.k === "reps" || s.tempo || s.log) setsDone.push({ ex: s.ex, name: s.name, set: s.set, reps: s.reps, kg: sessionW[s.ex], secs: Math.round((Date.now() - stepStart) / 1000), sec: s.sec });
+    if ((s.k === "reps" && !s.partner) || s.tempo || s.log) setsDone.push({ ex: s.ex, name: s.name, set: s.set, reps: s.reps, kg: sessionW[s.ex], secs: Math.round((Date.now() - stepStart) / 1000), sec: s.sec });
     idx++;
     if (idx >= steps.length) { finish(true); return; }
     enterStep(true);
@@ -825,7 +1021,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
   }
   function back() {
     if (!running || idx === 0) return;
-    idx--; if (steps[idx].k === "reps" || steps[idx].tempo || steps[idx].log) setsDone.pop();
+    idx--; if ((steps[idx].k === "reps" && !steps[idx].partner) || steps[idx].tempo || steps[idx].log) setsDone.pop();
     if (paused) setPaused(false);
     enterStep(true);
   }
