@@ -512,17 +512,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     s.push(T(w, "work", "Arm circles", 60, "Off the elliptical. Arm circles, 1 minute. Forwards, then backwards."));
     s.push(R(w, "Cat-cow", "catcow", 1, 1, "10 slow reps", "Round the back, then arch. Move with your breath."));
     s.push(R(w, "World's greatest stretch", "wgs", 1, 1, "5 each side", "Lunge, hand down, rotate the other arm to the ceiling."));
-    altBlock(s, "Block A · I go, you go", [
+    altBlock(s, "Lat / curl station · I go, you go", [
       ["latpull", "Lat pulldown", 4, "8–10 reps", "Pull to the top of your chest, elbows down and back. Stands in for pull-ups."],
-      ["smbench", "Smith bench press", 4, "8–10 reps", "Bar to mid-chest, feet flat, shoulder blades squeezed."]]);
-    s.push(T("Block B · I go, you go", "rest", "Rest", 45, "Block A done. Rest 45 seconds. Block B: Smith inverted rows, then shoulder press."));
-    altBlock(s, "Block B · I go, you go", [
-      ["invrow", "Smith inverted row", 3, "10 reps", "Bar at hip height, heels on the floor, body straight. Too easy? Lower the bar or feet on the bench."],
-      ["spress", "Smith or machine shoulder press", 3, "10 reps", "Press overhead without arching your lower back."]]);
-    s.push(T("Block C · I go, you go", "rest", "Rest", 45, "Block B done. Rest 45 seconds. Block C: cable curls, then push-ups on dumbbells."));
-    altBlock(s, "Block C · I go, you go", [
-      ["curl", "Cable bicep curl", 3, "12 reps", "Elbows pinned to your sides, slow on the way down."],
-      ["dbpush", "Push-ups on dumbbells", 3, "Max minus 2", "Hands on the dumbbells, chest low, stop 2 reps before failure."]]);
+      ["curl", "Cable bicep curl", 3, "12 reps", "Elbows pinned to your sides, slow on the way down."]]);
+    s.push(T("Smith station · I go, you go", "rest", "Move", 45, "Lat station done. Move to the Smith station. Bench press first, then one switch to shoulder press."));
+    altBlock(s, "Smith station · I go, you go", [
+      ["smbench", "Smith bench press", 4, "8–10 reps", "Bar to mid-chest, feet flat, shoulder blades squeezed."],
+      ["spress", "Smith shoulder press", 3, "10 reps", "Press overhead without arching your lower back."]]);
+    var fl = "Floor · together";
+    s.push(T(fl, "rest", "Move", 45, "Smith station done. Together on the floor: one-arm dumbbell rows and push-ups on dumbbells."));
+    s.push(W(fl, "One-arm dumbbell row", "row"));
+    for (var q = 1; q <= 3; q++) {
+      s.push(R(fl, "One-arm dumbbell row", "row", q, 3, "10 each side", "Brace on the bench or your knee. Pull the elbow back to your hip."));
+      s.push(R(fl, "Push-ups on dumbbells", "dbpush", q, 3, "Max minus 2", "Hands on the dumbbells, chest low, stop 2 reps before failure."));
+      s.push(T(fl, "rest", "Rest", 45, q < 3 ? "Rest 45 seconds." : "Rest 45 seconds. Abs together next."));
+    }
     for (var r = 1; r <= 3; r++) {
       var a = "Abs together · Round " + r + " of 3";
       s.push(T(a, "prep", "Dead bug", 5, (r === 1 ? "Abs together on the mats. 3 rounds. " : "") + "Dead bug position."));
@@ -664,8 +668,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--prep); outl
     return s;
   }
   var KOCHI = [
-    { id: "kochi-mon", date: "2026-11-23", title: "Kochi Mon 23 Nov · Upper body + abs", sub: "Hotel gym with a partner · lat pulldown, Smith bench, rows, press, curls, abs", build: buildKochiMon,
-      parts: [["Warm-up", "Elliptical 5 min + mobility"], ["Block A", "Lat pulldown, Smith bench 4 × 8–10 · I go, you go"], ["Block B", "Smith inverted row, shoulder press 3 × 10"], ["Block C", "Cable curl 3 × 12, push-ups on dumbbells 3 × max−2"], ["Abs together", "3 rounds: dead bug, plank, side planks, hollow hold"], ["Cool-down", "Chest, lats, child's pose"]] },
+    { id: "kochi-mon", date: "2026-11-23", title: "Kochi Mon 23 Nov · Upper body + abs", sub: "Hotel gym with a partner · one station at a time: lat/curl, Smith, floor, abs", build: buildKochiMon,
+      parts: [["Warm-up", "Elliptical 5 min + mobility"], ["Lat / curl station", "Lat pulldown 4 × 8–10, then cable curl 3 × 12 · I go, you go"], ["Smith station", "Bench 4 × 8–10, then shoulder press 3 × 10 · I go, you go"], ["Floor together", "Dumbbell row 3 × 10 each side, push-ups on dumbbells 3 × max−2"], ["Abs together", "3 rounds: dead bug, plank, side planks, hollow hold"], ["Cool-down", "Chest, lats, child's pose"]] },
     { id: "kochi-tue", date: "2026-11-24", title: "Kochi Tue 24 Nov · Low-impact HIIT", sub: "Race replacement · elliptical relay, sprints, core", build: buildKochiTue,
       parts: [["Warm-up", "Elliptical 8 min with 3 surges"], ["Relay", "4 rounds: you 3 min hard elliptical, then 3 min floor circuit (partner opposite)"], ["Sprints", "10 × 30 s all-out / 30 s easy"], ["Core together", "2 rounds: mountain climbers, Russian twist, reverse crunch"], ["Cool-down", "Elliptical 3 min + stretches"]] },
     { id: "kochi-wed", date: "2026-11-25", title: "Kochi Wed 25 Nov · Legs + core", sub: "Smith squat, leg press, leg extension, RDL, split squats, core", build: buildKochiWed,
